@@ -43,7 +43,7 @@ rsleep = function(min=1, max=60) {
   invisible()
 }
 
-get_national_polygons = function(year, path) {
+get_national_polygons = function(geom, year, path) {
   
   url = paste0('https://files.hudexchange.info/resources/documents/',
                'CoC_GIS_National_Boundary_', year, '.zip')
@@ -55,27 +55,59 @@ get_national_polygons = function(year, path) {
   
   unzip(dest_path, exdir = path)
   
-  rsleep()
-  
 }
 
-get_state_data = function(state, year, path) {
+
+get_state_data = function(geom, year, path) {
   
   url = paste0('https://files.hudexchange.info/reports/published/',
-               'CoC_GIS_State_Shapefile_',  state, '_', year, '.zip')
+               'CoC_GIS_State_Shapefile_',  geom, '_', year, '.zip')
   
-  dest_file = paste0('CoC_data_', state, '_', year ,'.zip')
+  dest_file = paste0('CoC_data_', geom, '_', year ,'.zip')
   dest_path = file.path(path, dest_file)
   
-  download.file(url, dest_path)
+  unzipped_dir = file.path(path, geom)
   
-  unzip(dest_path, exdir = path)
+  if (!dir.exists(unzipped_dir)) {
+    dir.create(unzipped_dir, recursive=TRUE)
+    download.file(url, dest_path)
+  }
+  
+  unzip(dest_path, exdir = unzipped_dir)
   
   unlink(dest_path)
   
-  rsleep()
   
 }
+
+get_hud_data = function(geom, FUN, year, path, error_file) {
+
+  rsleep()
+  #downloads and saves file to folder on computer
+  tryCatch(
+    { 
+      do.call(FUN, list(geom=geom, year=year, path=path))
+      #message("Downloaded: ", file_name)
+    }, 
+    
+    error = function(e) {
+      df <- data.frame(geom = geom,
+                       year = year,
+                       path = path,
+                       error = as.character(e))
+      
+      write.table(df, 
+                  error_file, 
+                  sep=',', 
+                  row.names=FALSE, 
+                  col.names = FALSE, 
+                  append=TRUE)
+      
+    })
+  
+  
+}
+
 
 
 read_in_state_cocs = function(fns) {
@@ -100,11 +132,23 @@ read_in_state_cocs = function(fns) {
 }
 
 
+# error file --------------------------------------------------------------
+
+error_fn = 'logs/coc_errors.csv'
+
+df = data.frame(geom = character(), 
+                year = integer(),
+                path = character(),
+                error = character())
+
+if (!file.exists(error_fn)) write.csv(df, error_fn, row.names = FALSE)
+
 # National CoCs -----------------------------------------------------------
 
 if (download_national) {
-  get_national_polygons(yr, data_path)
   
+  get_hud_data('USA', 'get_national_polygons', yr, data_path, error_fn)
+
 }
 
 
@@ -112,7 +156,8 @@ if (download_national) {
 
 
 if (download_state) {
-  sapply(state.abb, get_state_data, year=yr, path=data_path)
+
+  lapply(state.abb, get_hud_data, 'get_state_data', yr, data_path, error_fn)
   
   shape_fns = list.files(data_path, pattern='\\.shp$', recursive=TRUE, 
                          full.names=TRUE)
