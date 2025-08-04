@@ -35,7 +35,7 @@ if (!dir.exists(data_path)) {
 
 # Functions ---------------------------------------------------------------
 
-rsleep = function(min=1, max=60) {
+rsleep = function(min=1, max=25) {
   duration = runif(1, min, max)
   message(paste('Sleeping for', round(duration), 'seconds.'))
   Sys.sleep(duration)
@@ -52,6 +52,7 @@ get_national_polygons = function(geom, year, path) {
   dest_path = file.path(path, dest_file)
   
   download.file(url, dest_path)
+  rsleep()
   
   unzip(dest_path, exdir = path)
   
@@ -71,6 +72,8 @@ get_state_data = function(geom, year, path) {
   if (!dir.exists(unzipped_dir)) {
     dir.create(unzipped_dir, recursive=TRUE)
     download.file(url, dest_path)
+    rsleep()
+    
   }
   
   unzip(dest_path, exdir = unzipped_dir)
@@ -82,7 +85,6 @@ get_state_data = function(geom, year, path) {
 
 get_hud_data = function(geom, FUN, year, path, error_file) {
 
-  rsleep()
   #downloads and saves file to folder on computer
   tryCatch(
     { 
