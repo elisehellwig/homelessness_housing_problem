@@ -1,3 +1,8 @@
+#Project specific files
+data/
+*.Rproj
+*scratch*
+
 # History files
 .Rhistory
 .Rapp.history
@@ -8,6 +13,7 @@
 
 # User-specific files
 .Ruserdata
+.DS_Store
 
 # Example code in package build process
 *-Ex.R
@@ -47,3 +53,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+# pixi environments
+.pixi/*
+!.pixi/config.toml
