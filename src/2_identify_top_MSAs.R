@@ -34,6 +34,10 @@ msa_pop = get_acs(geography = 'cbsa',
                   year=2019,
                   geometry=TRUE)
 
+# remove San Juan for being in Puerto Rico
+msa_pop = msa_pop[which(msa_pop$GEOID != 41980),]
+
+
 #sort msas by pop (decreasing)
 msa_pop = msa_pop[order(msa_pop$estimate, decreasing = TRUE),]
 
